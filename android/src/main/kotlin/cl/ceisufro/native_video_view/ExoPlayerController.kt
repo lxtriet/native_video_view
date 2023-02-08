@@ -42,6 +42,7 @@ class ExoPlayerController(
     private var dataSource: String? = null
     private var requestAudioFocus: Boolean = true
     private var volume: Double = 1.0
+    private var speed: Double = 1.0
     private var mute: Boolean = false
     private var disposed: Boolean = false
     private var playerState: PlayerState = PlayerState.NOT_INITIALIZED
@@ -131,6 +132,14 @@ class ExoPlayerController(
                 }
                 result.success(null)
             }
+            "player#setPlaybackSpeed" -> {
+                val speed: Double? = call.argument("speed")
+                if (speed != null) {
+                    this.speed = speed
+                    configureSpeed()
+                }
+                result.success(null)
+            }
         }
     }
 
@@ -184,6 +193,10 @@ class ExoPlayerController(
         } else {
             exoPlayer.volume = volume.toFloat()
         }
+    }
+
+    private fun configureSpeed() {
+        exoPlayer.setPlaybackSpeed(speed.toFloat())
     }
 
     private fun initVideo(dataSource: String?) {

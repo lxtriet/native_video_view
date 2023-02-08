@@ -3,13 +3,16 @@ package cl.ceisufro.native_video_view
 import android.content.Context
 import android.media.AudioManager
 import android.media.MediaPlayer
+import android.media.SoundPool
 import android.net.Uri
 import android.os.Build
+import android.os.Environment
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.VideoView
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import io.flutter.plugin.common.BinaryMessenger
@@ -39,6 +42,7 @@ class NativeVideoViewController(
     private var disposed: Boolean = false
     private var requestAudioFocus: Boolean = true
     private var volume: Double = 1.0
+    private var speed: Double = 1.0
     private var mute: Boolean = false
     private var mediaPlayer: MediaPlayer? = null
     private var playerState: PlayerState = PlayerState.NOT_INITIALIZED
@@ -120,6 +124,14 @@ class NativeVideoViewController(
                     this.mute = false
                     this.volume = volume
                     configureVolume()
+                }
+                result.success(null)
+            }
+            "player#setPlaybackSpeed" -> {
+                val speed: Double? = call.argument("speed")
+                if (speed != null) {
+                    this.speed = speed
+                    configureSpeed()
                 }
                 result.success(null)
             }
@@ -224,6 +236,16 @@ class NativeVideoViewController(
                 mediaPlayer?.setVolume(0f, 0f)
             } else {
                 mediaPlayer?.setVolume(volume.toFloat(), volume.toFloat())
+            }
+        }
+    }
+
+    private fun configureSpeed() {
+        if (mediaPlayer != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                mediaPlayer?.playbackParams?.speed = this.speed.toFloat()
+            } else {
+              // TODO: handle change playback speed for API below 23
             }
         }
     }

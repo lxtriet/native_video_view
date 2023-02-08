@@ -22,6 +22,9 @@ class VideoViewController {
   /// Timer to control the progression of the video being played.
   Timer? _progressionController;
 
+  /// Listener list
+  final List<Function(int)> _listeners = [];
+
   /// Constructor of the class.
   VideoViewController._(
     this._channel,
@@ -46,6 +49,7 @@ class VideoViewController {
   void dispose() {
     _stopProgressTimer();
     _cleanTempFile();
+    _listeners.clear();
   }
 
   /// Handle the calls from the listeners of state of the player.
@@ -241,6 +245,18 @@ class VideoViewController {
     return false;
   }
 
+  /// Sets the playback speed of the player.
+  Future<bool> setPlaybackSpeed(double speed) async {
+    try {
+      Map<String, dynamic> args = {"speed": speed};
+      await _channel.invokeMethod("player#setPlaybackSpeed", args);
+      return true;
+    } catch (ex) {
+      debugPrint("$ex");
+    }
+    return false;
+  }
+
   /// Starts the timer that monitor the time progression of the playback.
   void _startProgressTimer() {
     _progressionController ??=
@@ -262,6 +278,7 @@ class VideoViewController {
   Future _onProgressChanged(Timer? timer) async {
     if ((_progressionController?.isActive ?? false)) {
       int position = await currentPosition();
+      _notifyToListeners(position);
       int duration = videoFile?.info?.duration ?? 1000;
       _videoViewState.onProgress(position, duration);
     }
@@ -271,5 +288,15 @@ class VideoViewController {
   void _resetProgressPosition() {
     int duration = videoFile?.info?.duration ?? 1000;
     _videoViewState.onProgress(0, duration);
+  }
+
+  void addListener(Function(int) listener) {
+    _listeners.add(listener);
+  }
+
+  void _notifyToListeners(int position) {
+    for (var element in _listeners) {
+      element.call(position);
+    }
   }
 }
